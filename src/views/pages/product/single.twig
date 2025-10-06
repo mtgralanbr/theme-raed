@@ -106,7 +106,7 @@
                     <salla-button
                             class="btn--wishlist animated sws"
                             data-id="{{ product.id }}"
-                            onclick="salla.wishlist.toggle({{ product.id }})"
+                            onclick="salla.wishlist.toggle('{{ product.id }}')"
                             shape="icon"
                             fill="outline"
                             color="light">
@@ -158,7 +158,7 @@
                     {% if has_many_images %}
                         <div slot="thumbs">
                             {% for image in product.images %}
-                                <div class="slide--one-fourth {{ image.video_url?'video-entry':'' }} {{ image.three_d_image_url?'model-entry':'' }}">
+                                <div class="slide--one-fourth {{ image.video_url?'video-entry':'' }} {{ image.three_d_image_url?'model-entry':'' }}" data-caption="{{ image.alt }}">
                                     {% if loop.index < 5 %}
                                         <img src="{{ image.url }}"
                                              loading="eager"
@@ -258,7 +258,7 @@
                     <salla-button
                             class="btn--wishlist animated hidden sm:inline-flex"
                             data-id="{{ product.id }}"
-                            onclick="salla.wishlist.toggle({{ product.id }})"
+                            onclick="salla.wishlist.toggle('{{ product.id }}')"
                             shape="icon"
                             fill="outline"
                             color="light"
@@ -311,7 +311,7 @@
                             <div class="mt-1 sm:mt-0 sm:col-span-2 text-end">
                                 <div class="flex rtl:space-x-reverse space-x-3">
                                     <a href="#!"
-                                       onclick="salla.event.dispatch('scopes::open', {mode: 'availability', product_id: {{ product.id }} })"
+                                       onclick="salla.event.dispatch('scopes::open', {mode: 'availability', product_id: '{{ product.id }}' })"
                                        class="group text-primary flex items-center justify-center">
                                         <span>{{ trans('pages.products.select_branch') }}</span>
                                         <span class="sicon-keyboard_arrow_left mr-2 transition-all group-hover:-translate-x-1"></span>
@@ -394,7 +394,7 @@
                         </salla-add-product-button>
                     </section>
                     {% if product.is_giftable %}
-                        <salla-gifting class="mt-5" widget-subtitle="{{ gifting_intro }}" product-id="{{ product.id }}"></salla-gifting>
+                        <salla-gifting class="mt-5" widget-subtitle="{{ gifting_intro }}" product-id="{{ product.id }}" {{ product.is_require_shipping ? 'physical-products' : ''  }}></salla-gifting>
                     {% endif %}
                 </form>
 
@@ -406,7 +406,9 @@
     </div>
 
     {# Comments Area #}
-    <salla-comments item-id="{{product.id}}" type="product"></salla-comments>
+    {% if store.settings.rating.show_on_product %}
+        <salla-comments item-id="{{product.id}}" type="product"></salla-comments>
+    {% endif %}
     
     {# Similar Products Area #}
     <div class="container">
@@ -420,4 +422,3 @@
         <script type="module" defer src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
     {% endif %}
 {% endblock %}
-

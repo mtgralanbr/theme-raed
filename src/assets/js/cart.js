@@ -1,6 +1,5 @@
 import BasePage from './base-page';
 import {validateProductOptions} from './partials/validate-product-options';
-
 class Cart extends BasePage {
     onReady() {
         // keep update the dom base in the events
@@ -18,7 +17,9 @@ class Cart extends BasePage {
             freeShipping: '#free-shipping',
             freeShippingBar: '#free-shipping-bar',
             freeShippingMsg: '#free-shipping-msg',
-            freeShipApplied: '#free-shipping-applied'
+            freeShipApplied: '#free-shipping-applied',
+            cartGifting: '#cart-gifting',
+            sallaGifting:'#salla-gifting'
         });
 
         this.initiateCoupon();
@@ -75,6 +76,11 @@ class Cart extends BasePage {
             document.querySelector('.cart-options')?.remove();
             return window.location.reload();
         }
+        // toggle physical gifting depned on giftable flag
+        app.toggleElementClassIf(app.cartGifting, 'active', 'hidden', () => cartData?.gift?.enabled);
+        // Use toggleAttribute to handle the `physical-products` attribute
+        app.sallaGifting?.toggleAttribute('physical-products', cartData?.gift?.type === 'physical');
+        app.sallaGifting?.toggleAttribute('digital-products', cartData?.gift?.type === 'digital');
 
         // update the dom for cart options
         this.updateCartOptions(cartData?.options);
@@ -105,6 +111,7 @@ class Cart extends BasePage {
             ? salla.lang.get('pages.cart.has_free_shipping')
             : salla.lang.get('pages.cart.free_shipping_alert', { amount: salla.money(cartData.free_shipping_bar.remaining) });
         app.freeShippingBar.children[0].style.width = cartData.free_shipping_bar.percent + '%';
+
     }
 
     /**
@@ -120,29 +127,34 @@ class Cart extends BasePage {
         let totalElement = cartItem.querySelector('.item-total'),
             priceElement = cartItem.querySelector('.item-price'),
             regularPriceElement = cartItem.querySelector('.item-regular-price'),
+            itemOriginalPrice = cartItem.querySelector('.item-original-price'),
             offerElement = cartItem.querySelector('.offer-name'),
+            oldOffers = cartItem.querySelector('.old-offers'),
+            freeRibbon = cartItem.querySelector('.free-ribbon'),
             offerIconElement = cartItem.querySelector('.offer-icon'),
-            hasSpecialPrice = item.offer || item.special_price > 0;
-
-        let total = salla.money(item.total);
+            hasSpecialPrice = item.offer || item.special_price > 0,
+            hasSalePrice = item.is_on_sale,
+            newOffersActive = item.detailed_offers?.length > 0 ;
+        let item_total = item.detailed_offers?.length > 0 ? item.total_special_price : item.total;
+        let total = salla.money(item_total);
         if (total !== totalElement.innerHTML) {
             totalElement.innerHTML = total;
             app.anime(totalElement, { scale: [.88, 1] });
         }
 
-        app.toggleElementClassIf(offerElement, 'offer-applied', 'hidden', () => hasSpecialPrice)
-            .toggleElementClassIf(offerIconElement, 'offer-applied', 'hidden', () => hasSpecialPrice)
-            .toggleElementClassIf(regularPriceElement, 'offer-applied', 'hidden', () => hasSpecialPrice)
-            .toggleElementClassIf(priceElement, 'text-red-400', 'text-sm text-gray-400', () => hasSpecialPrice);
+        app.toggleElementClassIf([offerElement, oldOffers], 'offer-applied', 'hidden', () => hasSpecialPrice && !newOffersActive)
+            .toggleElementClassIf([regularPriceElement, offerIconElement], 'offer-applied', 'hidden', () => hasSpecialPrice)
+            .toggleElementClassIf([itemOriginalPrice], 'offer-applied', 'hidden', () => hasSalePrice)
+            .toggleElementClassIf(priceElement, 'text-red-400', 'text-sm text-gray-400', () => hasSpecialPrice)
+            .toggleElementClassIf(freeRibbon, 'active', 'hidden', () => item.price == 0);
 
         priceElement.innerHTML = salla.money(item.price);
-        if (hasSpecialPrice) {
-            offerElement.innerHTML = item.offer.names;
-            regularPriceElement.innerHTML = salla.money(item.product_price);
-        }
+
+        if (!hasSpecialPrice){return;}
+        if (!newOffersActive) {offerElement.innerHTML = item.offer.names;}
+        itemOriginalPrice.innerHTML = salla.money(item.original_price);
+        regularPriceElement.innerHTML = salla.money(item.product_price);
     }
-
-
     //=================== Coupon Method ========================//
     initiateCoupon() {
         if (!app.couponCodeInput) {
